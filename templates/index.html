@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Prediction Web App</title>
+  <style>
+    body {
+      background: linear-gradient(to right, #141e30, #243b55);
+    }
+  </style>
+</head>
+<body class="text-gray-100">
+  <!-- Navbar -->
+  <nav class="bg-gradient-to-r from-blue-600 to-purple-600 p-4 shadow-lg">
+    <div class="container mx-auto flex justify-between items-center">
+      <h1 class="text-3xl font-extrabold">Prediction App</h1>
+      <ul class="flex space-x-6 text-lg">
+        <li><a href="#home" class="hover:text-gray-300 transition">Home</a></li>
+        <li><a href="https://www.kaggle.com/datasets/unsdsn/world-happiness" target="_blank" class="hover:text-gray-300 transition">Dataset</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- Home Section -->
+  <section id="home" class="container mx-auto text-center py-20">
+    <h2 class="text-5xl font-bold">Welcome to the Prediction Web App</h2>
+    <p class="text-xl text-gray-300 mt-4">Enter relevant features and get an AI-driven prediction instantly.</p>
+    <a href="#predict" class="mt-6 inline-block bg-gradient-to-r from-blue-500 to-purple-500 text-white px-6 py-3 rounded-lg shadow-lg hover:shadow-xl transition-transform transform hover:scale-105">Get Started</a>
+  </section>
+
+  <!-- Prediction Form -->
+  <section id="predict" class="container mx-auto max-w-xl bg-gray-900 p-10 rounded-lg shadow-2xl mt-10">
+    <h2 class="text-3xl font-semibold text-center">Enter Features (Values should be between 0 and 1)</h2>
+    <form id="prediction-form" class="mt-6 space-y-6">
+      <div>
+        <label class="block text-gray-300">GDP per Capita:</label>
+        <input type="number" step="0.0000001" min="0" max="1" name="GDP per Capita" required class="w-full p-3 border border-gray-600 bg-gray-800 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+      </div>
+      <div>
+        <label class="block text-gray-300">Social Support:</label>
+        <input type="number" step="0.0000001" min="0" max="1" name="Social Support" required class="w-full p-3 border border-gray-600 bg-gray-800 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+      </div>
+      <div>
+        <label class="block text-gray-300">Life Expectancy:</label>
+        <input type="number" step="0.0000001" min="0" max="1" name="Life Expectancy" required class="w-full p-3 border border-gray-600 bg-gray-800 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+      </div>
+      <div>
+        <label class="block text-gray-300">Freedom:</label>
+        <input type="number" step="0.0000001" min="0" max="1" name="Freedom" required class="w-full p-3 border border-gray-600 bg-gray-800 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+      </div>
+      <div>
+        <label class="block text-gray-300">Corruption:</label>
+        <input type="number" step="0.0000001" min="0" max="1" name="Corruption" required class="w-full p-3 border border-gray-600 bg-gray-800 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+      </div>
+      <button type="submit" class="w-full bg-gradient-to-r from-blue-500 to-purple-500 text-white py-3 rounded-lg shadow-lg hover:shadow-xl transition-transform transform hover:scale-105">Predict</button>
+    </form>
+  </section>
+
+  <!-- Modal -->
+  <div id="prediction-modal" class="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center hidden">
+    <div class="bg-gray-900 p-6 rounded-lg shadow-xl max-w-sm w-full text-center">
+      <h3 class="text-2xl font-semibold">Prediction Result</h3>
+      <p id="modal-result" class="text-xl font-bold mt-4 text-green-400"></p>
+      <button onclick="closeModal()" class="mt-4 bg-red-500 px-4 py-2 rounded-lg text-white hover:bg-red-600">Close</button>
+    </div>
+  </div>
+
+  <script>
+    document.getElementById("prediction-form").onsubmit = async function (event) {
+      event.preventDefault();
+      let formData = new FormData(event.target);
+      let data = new URLSearchParams(formData);
+      let response = await fetch("/predict", { method: "POST", body: data });
+      let result = await response.json();
+      
+      if (result.error) {
+        document.getElementById("modal-result").innerText = "Error: " + result.error;
+        document.getElementById("modal-result").classList.add("text-red-400");
+      } else {
+        document.getElementById("modal-result").innerText = "Prediction: " + result.prediction;
+        document.getElementById("modal-result").classList.remove("text-red-400");
+      }
+      
+      document.getElementById("prediction-modal").classList.remove("hidden");
+    };
+
+    function closeModal() {
+      document.getElementById("prediction-modal").classList.add("hidden");
+    }
+  </script>
+</body>
+</html>
