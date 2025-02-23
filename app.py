@@ -7,9 +7,8 @@ from sklearn.preprocessing import MinMaxScaler
 
 app = Flask(__name__)
 
-# Load the trained model and scaler
+# Load the trained model
 model = joblib.load("./models/extratrees_model.pkl")
-scaler = joblib.load("./models/scaler.pkl")  
 
 # CSV file for tracking model performance
 LOG_FILE = "model_performance_log.csv"
@@ -21,25 +20,26 @@ def home():
 @app.route("/predict", methods=["POST"])
 def predict():
     try:
-        # Get input data from form
-        raw_data = np.array([[float(request.form[key]) for key in ["GDP per Capita", "Social Support", "Life Expectancy", "Freedom", "Corruption"]]])
+        # Define expected feature names
+        features = ["GDP per Capita", "Social Support", "Life Expectancy", "Freedom", "Corruption"]
 
-        # Scale input data using the loaded scaler
-        scaled_data = scaler.transform(raw_data)  # Apply transformation
+        # Get input data as DataFrame with correct feature names
+        raw_data = pd.DataFrame([request.form], columns=features, dtype=float)
 
-        # Make prediction
-        prediction = model.predict(scaled_data)[0]
+        # Convert to numpy before prediction
+        prediction = model.predict(raw_data.to_numpy())[0]
 
         # Log the input data and prediction
-        log_prediction(raw_data, scaled_data, prediction)
+        log_prediction(raw_data.to_numpy(), prediction)
 
         return jsonify({"prediction": float(prediction)})
 
     except Exception as e:
         return jsonify({"error": str(e)})
 
-def log_prediction(raw_data, scaled_data, prediction):
-    """Log raw input, scaled input, and model predictions for monitoring."""
+
+def log_prediction(raw_data, prediction):
+    """Log raw input and model predictions for monitoring."""
     log_entry = {
         "Timestamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "Raw GDP per Capita": raw_data[0][0],
@@ -47,11 +47,6 @@ def log_prediction(raw_data, scaled_data, prediction):
         "Raw Life Expectancy": raw_data[0][2],
         "Raw Freedom": raw_data[0][3],
         "Raw Corruption": raw_data[0][4],
-        "Scaled GDP per Capita": scaled_data[0][0],
-        "Scaled Social Support": scaled_data[0][1],
-        "Scaled Life Expectancy": scaled_data[0][2],
-        "Scaled Freedom": scaled_data[0][3],
-        "Scaled Corruption": scaled_data[0][4],
         "Prediction": prediction
     }
 
@@ -60,4 +55,6 @@ def log_prediction(raw_data, scaled_data, prediction):
     df.to_csv(LOG_FILE, mode="a", index=False, header=not pd.io.common.file_exists(LOG_FILE))
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    from waitress import serve
+    serve(app, host="0.0.0.0", port=5000)
+
