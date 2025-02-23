@@ -4,11 +4,12 @@ import pandas as pd
 import datetime
 from flask import Flask, request, jsonify, render_template
 from sklearn.preprocessing import MinMaxScaler
-
 app = Flask(__name__)
 
 # Load the trained model
 model = joblib.load("./models/extratrees_model.pkl")
+
+
 
 # CSV file for tracking model performance
 LOG_FILE = "model_performance_log.csv"
@@ -20,23 +21,19 @@ def home():
 @app.route("/predict", methods=["POST"])
 def predict():
     try:
-        # Define expected feature names
-        features = ["GDP per Capita", "Social Support", "Life Expectancy", "Freedom", "Corruption"]
+        # Get input data from form
+        raw_data = np.array([[float(request.form[key]) for key in ["GDP per Capita", "Social Support", "Life Expectancy", "Freedom", "Corruption"]]])
 
-        # Get input data as DataFrame with correct feature names
-        raw_data = pd.DataFrame([request.form], columns=features, dtype=float)
-
-        # Convert to numpy before prediction
-        prediction = model.predict(raw_data.to_numpy())[0]
+        # Make prediction
+        prediction = model.predict(raw_data)[0]
 
         # Log the input data and prediction
-        log_prediction(raw_data.to_numpy(), prediction)
+        log_prediction(raw_data, prediction)
 
         return jsonify({"prediction": float(prediction)})
 
     except Exception as e:
         return jsonify({"error": str(e)})
-
 
 def log_prediction(raw_data, prediction):
     """Log raw input and model predictions for monitoring."""
@@ -55,6 +52,4 @@ def log_prediction(raw_data, prediction):
     df.to_csv(LOG_FILE, mode="a", index=False, header=not pd.io.common.file_exists(LOG_FILE))
 
 if __name__ == "__main__":
-    from waitress import serve
-    serve(app, host="0.0.0.0", port=5000)
-
+    app.run(debug=True)
